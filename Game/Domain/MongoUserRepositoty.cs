@@ -9,7 +9,12 @@ namespace Game.Domain
         private readonly IMongoCollection<UserEntity> userCollection;
         public const string CollectionName = "users";
 
-        public MongoUserRepository(IMongoDatabase database) => userCollection = database.GetCollection<UserEntity>(CollectionName);
+        public MongoUserRepository(IMongoDatabase database)
+        {
+            userCollection = database.GetCollection<UserEntity>(CollectionName);
+            var options = new CreateIndexOptions{Unique = true};
+            userCollection.Indexes.CreateOne("{ Login : 1 }", options);
+        }
 
         public UserEntity Insert(UserEntity user)
         {
