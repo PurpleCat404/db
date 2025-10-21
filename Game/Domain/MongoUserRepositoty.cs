@@ -7,6 +7,7 @@ namespace Game.Domain
     public class MongoUserRepository : IUserRepository
     {
         private readonly IMongoCollection<UserEntity> userCollection;
+        private static object Locker = new object();
         public const string CollectionName = "users";
 
         public MongoUserRepository(IMongoDatabase database)
@@ -30,14 +31,17 @@ namespace Game.Domain
 
         public UserEntity GetOrCreateByLogin(string login)
         {
-            var user = userCollection.Find(x => x.Login == login).FirstOrDefault();
-            if (user is null)
+            lock (Locker)
             {
-                user = new UserEntity { Login = login };
-                userCollection.InsertOne(user);
-            }
+                var user = userCollection.Find(x => x.Login == login).FirstOrDefault();
+                if (user is null)
+                {
+                    user = new UserEntity { Login = login };
+                    userCollection.InsertOne(user);
+                }
 
-            return user;
+                return user;
+            }
         }
 
         public void Update(UserEntity user) => userCollection.ReplaceOne(x => x.Login == user.Login, user);
